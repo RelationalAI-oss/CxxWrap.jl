@@ -150,6 +150,10 @@ function has_cxx_module(mod::Module)
 end
 
 function register_julia_module(mod::Module, fptr::Ptr{Cvoid})
+    @info "register_julia_module(mod, fptr)"
+    @show get_cxxwrap_module()
+    display(stacktrace())
+    println()
   ccall((:register_julia_module, jlcxx_path), Cvoid, (Any,Ptr{Cvoid}), mod, fptr)
 end
 
@@ -157,6 +161,10 @@ function register_julia_module(mod::Module)
   fptr = Libdl.dlsym(Libdl.dlopen(mod.__cxxwrap_sopath), mod.__cxxwrap_wrapfunc)
   if !has_cxx_module(mod)
     empty!(mod.__cxxwrap_pointers)
+    @info "register_julia_module(mod)"
+    @show get_cxxwrap_module()
+    display(stacktrace())
+    println()
     ccall((:register_julia_module, jlcxx_path), Cvoid, (Any,Ptr{Cvoid}), mod, fptr)
   end
   if length(mod.__cxxwrap_pointers) != mod.__cxxwrap_nbpointers
@@ -383,11 +391,18 @@ function readmodule(so_path::AbstractString, funcname, m::Module)
   Core.eval(m, :(const __cxxwrap_nbpointers = $nb_pointers))
 end
 
+get_cxxwrap_module() = ccall((:get_cxxwrap_module, jlcxx_path), Ptr{Module}, ())
+
 function wrapmodule(so_path::AbstractString, funcname, m::Module)
   # Initialize the jlcxxwrap library from top-level user code, so that it will still
   # be initialized for static compilation. (See:
   #   https://github.com/JuliaInterop/libcxxwrap-julia/issues/24)
-  ccall((:initialize, jlcxx_path), Cvoid, (Any, Any), CxxWrap, CppFunctionInfo)
+  println("@wrapmodule")
+  @show get_cxxwrap_module()
+  CxxWrap.__init__()
+  println("Initialized")
+  @show get_cxxwrap_module()
+
   readmodule(so_path, funcname, m)
   wraptypes(m)
   wrapfunctions(m)
