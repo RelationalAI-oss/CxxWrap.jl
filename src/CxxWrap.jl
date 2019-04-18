@@ -152,6 +152,10 @@ end
 function register_julia_module(mod::Module, fptr::Ptr{Cvoid})
     @info "register_julia_module(mod, fptr)"
     @show get_cxxwrap_module()
+    CxxWrap.__init__()
+    println("Initialized")
+    @show get_cxxwrap_module()
+
     display(stacktrace())
     println()
   ccall((:register_julia_module, jlcxx_path), Cvoid, (Any,Ptr{Cvoid}), mod, fptr)
@@ -399,10 +403,6 @@ function wrapmodule(so_path::AbstractString, funcname, m::Module)
   #   https://github.com/JuliaInterop/libcxxwrap-julia/issues/24)
   println("@wrapmodule")
   @show get_cxxwrap_module()
-  CxxWrap.__init__()
-  println("Initialized")
-  @show get_cxxwrap_module()
-
   readmodule(so_path, funcname, m)
   wraptypes(m)
   wrapfunctions(m)
@@ -455,7 +455,7 @@ Initialize the C++ pointer tables in a precompiled module using CxxWrap. Must be
 `__init__` in the wrapped module
 """
 macro initcxx()
-  return :(register_julia_module($__module__))
+  return :(println("initcxx()"); register_julia_module($__module__))
 end
 
 struct SafeCFunction
